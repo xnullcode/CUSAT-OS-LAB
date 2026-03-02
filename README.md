@@ -1,6 +1,7 @@
 # CUSAT-OS-LAB
 
-Operating Systems Lab programs - Cycle I, II, and III
+This repository contains Operating Systems Lab programs for CUSAT, organized across three cycles. Cycle I covers Linux system calls including fork, exec, getpid, and I/O operations, along with simulation of Linux commands. Cycle II focuses on CPU scheduling policies, semaphores, page replacement algorithms, and deadlock prevention. Cycle III deals with inter-process communication, shell scripting, Linux kernel compilation, loadable kernel modules, device driver development, and building custom Linux distributions from Debian source. Programs are written in C and shell script.
+
 
 ## Structure
 
