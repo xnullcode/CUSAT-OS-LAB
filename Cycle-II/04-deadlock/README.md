@@ -11,7 +11,7 @@ Programs to implement deadlock prevention and avoidance strategies.
 ## Files
 | File | Description |
 |------|-------------|
-| [semaphores.c](./semaphores.c) | Demonstrates mutual exclusion using semaphores with multiple threads |
+| [dining_philosopher.c](./dining_philosopher.c) | Demonstrates synchronization of the Dining Philosophers problem using semaphores with multiple threads |
 
 ## Viva Questions and Answers
 
