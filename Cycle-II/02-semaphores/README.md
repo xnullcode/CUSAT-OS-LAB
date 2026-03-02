@@ -11,7 +11,7 @@ Programs to study the uses of semaphores for process synchronization.
 ## Files
 | File | Description |
 |------|-------------|
-|      |             |
+|[semaphores.c](./semaphores.c) | Demonstrates mutual exclusion using semaphores with multiple threads |
 
 ## Viva Questions and Answers
 
