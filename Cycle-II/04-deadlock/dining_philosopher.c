@@ -14,21 +14,31 @@ void* philosopher_func(void* arg) {
     int left = id;
     int right = (id + 1) % N;
 
-    printf("Philosopher %d is thinking\n", id);
+    while (1) {  // Infinite loop to make philosophers think and eat repeatedly
+        printf("Philosopher %d is thinking\n", id);
+        sleep(2);  // Simulate thinking time (change as needed)
 
-    // WAIT operation
-    sem_wait(&fork_sem[left]);
-    sem_wait(&fork_sem[right]);
+        // Avoid deadlock by reversing fork pickup order for one philosopher (last philosopher)
+        if (id == N - 1) {
+            int temp = left;
+            left = right;
+            right = temp;
+        }
 
-    // Critical section (Eating)
-    printf("Philosopher %d is eating\n", id);
-    sleep(1);
+        // WAIT operation
+        sem_wait(&fork_sem[left]);
+        sem_wait(&fork_sem[right]);
 
-    // SIGNAL operation
-    sem_post(&fork_sem[right]);
-    sem_post(&fork_sem[left]);
+        // Critical section (Eating)
+        printf("Philosopher %d is eating\n", id);
+        sleep(1);  // Simulate eating time (change as needed)
 
-    printf("Philosopher %d finished eating and returns to thinking\n", id);
+        // SIGNAL operation
+        sem_post(&fork_sem[right]);
+        sem_post(&fork_sem[left]);
+
+        printf("Philosopher %d finished eating and returns to thinking\n", id);
+    }
 
     return NULL;
 }
@@ -50,12 +60,12 @@ int main() {
         pthread_create(&philosopher[i], NULL, philosopher_func, &id[i]);
     }
 
-    // Wait for all philosophers to finish
+    // Wait for all philosophers to finish (which never happens due to the infinite loop)
     for (i = 0; i < N; i++) {
         pthread_join(philosopher[i], NULL);
     }
 
-    // Release synchronization resources
+    // Release synchronization resources (although this part won't be reached)
     for (i = 0; i < N; i++) {
         sem_destroy(&fork_sem[i]);
     }
