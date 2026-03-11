@@ -12,6 +12,7 @@ Programs to implement deadlock prevention and avoidance strategies.
 | File | Description |
 |------|-------------|
 | [dining_philosopher.c](./dining_philosopher.c) | Demonstrates synchronization of the Dining Philosophers problem using semaphores with multiple threads |
+|[bankers_algorithm.c](./bankers_algorithm.c)| Implementation of Banker's Algorithm |
 
 ## Viva Questions and Answers
 
