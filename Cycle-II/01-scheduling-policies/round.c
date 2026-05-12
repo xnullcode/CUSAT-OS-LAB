@@ -6,11 +6,13 @@ int dequeue() { int v = queue[front]; front = (front+1)%100; size--; return v; }
 
 int main() {
     int n, tq;
-    int at[100], bt[100], rbt[100], ct[100], wt[100], tat[100], done[100] = {0};
+    int at[100],pid[100], bt[100], rbt[100], ct[100], wt[100], tat[100], done[100] = {0};
     
     printf("Processes: "); scanf("%d", &n);
     for (int i = 0; i < n; i++) {
-        printf("P%d AT BT: ", i+1); 
+        printf("Enter Pid:",pid[i]);
+        scanf("%d",&pid[i]);
+        printf("P-%d AT BT: ", pid[i]); 
         scanf("%d %d", &at[i], &bt[i]);
         rbt[i] = bt[i];
     }
@@ -21,6 +23,7 @@ int main() {
         for (int j = 0; j < n-i-1; j++)
             if (at[j] > at[j+1]) {
                 int t;
+                t=pid[j];pid[j]=pid[j+1];pid[j+1]=t;
                 t=at[j]; at[j]=at[j+1]; at[j+1]=t;
                 t=bt[j]; bt[j]=bt[j+1]; bt[j+1]=t;
                 t=rbt[j]; rbt[j]=rbt[j+1]; rbt[j+1]=t;
@@ -68,7 +71,7 @@ int main() {
 
     printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
     for (int i = 0; i < n; i++)
-        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", i+1, at[i], bt[i], ct[i], tat[i], wt[i]);
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", pid[i], at[i], bt[i], ct[i], tat[i], wt[i]);
 
     return 0;
 }
