@@ -1,116 +1,74 @@
 #include <stdio.h>
 
-int queue[100], front = 0, rear = -1, queueSize = 0;
-
-void enqueue(int val) {
-    rear = (rear + 1) % 100;
-    queue[rear] = val;
-    queueSize++;
-}
-
-int dequeue() {
-    int val = queue[front];
-    front = (front + 1) % 100;
-    queueSize--;
-    return val;
-}
+int queue[100], front = 0, rear = -1, size = 0;
+void enqueue(int v) { rear = (rear+1)%100; queue[rear] = v; size++; }
+int dequeue() { int v = queue[front]; front = (front+1)%100; size--; return v; }
 
 int main() {
     int n, tq;
-    int pid[100], at[100], bt[100], rbt[100];
-    int ct[100], wt[100], tat[100];
-    int enqueued[100] = {0};
-    int current_time = 0, completed = 0;
-
-    printf("Enter number of processes: ");
-    scanf("%d", &n);
-
+    int at[100], bt[100], rbt[100], ct[100], wt[100], tat[100], done[100] = {0};
+    
+    printf("Processes: "); scanf("%d", &n);
     for (int i = 0; i < n; i++) {
-        pid[i] = i + 1;
-        printf("Process %d Arrival Time: ", pid[i]);
-        scanf("%d", &at[i]);
-        printf("Process %d Burst Time: ", pid[i]);
-        scanf("%d", &bt[i]);
+        printf("P%d AT BT: ", i+1); 
+        scanf("%d %d", &at[i], &bt[i]);
         rbt[i] = bt[i];
-        ct[i] = 0;
-        wt[i] = 0;
-        tat[i] = 0;
     }
+    printf("Time Quantum: "); scanf("%d", &tq);
 
-    printf("Enter Time Quantum: ");
-    scanf("%d", &tq);
+    // sort by arrival time (simple bubble sort)
+    for (int i = 0; i < n-1; i++)
+        for (int j = 0; j < n-i-1; j++)
+            if (at[j] > at[j+1]) {
+                int t;
+                t=at[j]; at[j]=at[j+1]; at[j+1]=t;
+                t=bt[j]; bt[j]=bt[j+1]; bt[j+1]=t;
+                t=rbt[j]; rbt[j]=rbt[j+1]; rbt[j+1]=t;
+            }
 
-    int first = 0;
-    for (int i = 1; i < n; i++) {
-        if (at[i] < at[first])
-            first = i;
-    }
-
-    current_time = at[first];
-    enqueue(first);
-    enqueued[first] = 1;
+    int enqueued[100] = {0};
+    int current_time = at[0], completed = 0;
+    enqueue(0); enqueued[0] = 1;
 
     while (completed < n) {
-
-        if (queueSize == 0) {
-            int nextArrival = -1;
-            for (int i = 0; i < n; i++) {
-                if (at[i] > current_time && rbt[i] > 0) {
-                    if (nextArrival == -1 || at[i] < at[nextArrival])
-                        nextArrival = i;
-                }
-            }
-            current_time = at[nextArrival];
-
-            for (int i = 0; i < n; i++) {
-                if (at[i] <= current_time && !enqueued[i] && rbt[i] > 0) {
-                    enqueue(i);
-                    enqueued[i] = 1;
-                }
-            }
-            continue;
-        }
-
         int p = dequeue();
 
         if (rbt[p] > tq) {
-            rbt[p] = rbt[p] - tq;
-            current_time = current_time + tq;
+            rbt[p] -= tq;
+            current_time += tq;
         } else {
-            current_time = current_time + rbt[p];
+            current_time += rbt[p];
             rbt[p] = 0;
             completed++;
             ct[p] = current_time;
             tat[p] = ct[p] - at[p];
             wt[p] = tat[p] - bt[p];
+            done[p] = 1;
         }
 
-        for (int i = 0; i < n; i++) {
-            if (at[i] <= current_time && !enqueued[i] && rbt[i] > 0) {
-                enqueue(i);
-                enqueued[i] = 1;
+        // enqueue newly arrived
+        for (int i = 0; i < n; i++)
+            if (!enqueued[i] && at[i] <= current_time && rbt[i] > 0) {
+                enqueue(i); enqueued[i] = 1;
             }
-        }
 
-        if (rbt[p] > 0) {
-            enqueue(p);
-        }
-    }
+        // re-enqueue current if unfinished
+        if (rbt[p] > 0) enqueue(p);
 
-    float total_wt = 0, total_tat = 0;
-    for (int i = 0; i < n; i++) {
-        total_wt += wt[i];
-        total_tat += tat[i];
+        // if queue empty, jump to next arrival
+        if (size == 0) {
+            for (int i = 0; i < n; i++)
+                if (!done[i] && rbt[i] > 0) {
+                    current_time = at[i];
+                    enqueue(i); enqueued[i] = 1;
+                    break;
+                }
+        }
     }
 
     printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
-    for (int i = 0; i < n; i++) {
-        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
-               pid[i], at[i], bt[i], ct[i], tat[i], wt[i]);
-    }
-
-    printf("\nAverage Waiting Time: %.2f\n", total_wt / n);
-    printf("Average Turnaround Time: %.2f\n", total_tat / n);
+    for (int i = 0; i < n; i++)
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", i+1, at[i], bt[i], ct[i], tat[i], wt[i]);
 
     return 0;
 }
