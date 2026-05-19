@@ -1,69 +1,98 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<pthread.h>
-#define MAX_SIZE 5
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
 
-pthread_mutex_t mutex;
-pthread_cond_t not_full , not_empty ;
+#define SIZE 5
 
-int in = 0, out = 0 ,count=0, buffer[10];
+int buffer[SIZE];
+int in = 0;
+int out = 0;
 
-void *producer(void *args){
-    int i, value =0;
-    for(i=0;i<10;i++){
-        pthread_mutex_lock(&mutex);
+/* Semaphores */
+sem_t mutex;
+sem_t empty;
+sem_t full;
 
-        while(count == MAX_SIZE){
-            pthread_cond_wait(&not_full, &mutex);
-        }
-        buffer[in]= value;
-        printf("Produced %d to %d\n",value,in);
-        value ++;
-        count ++;
-        in = (in+1) % MAX_SIZE;
-        pthread_cond_signal(&not_empty);
-        pthread_mutex_unlock(&mutex);
-        usleep(500000);
+/* Producer Function */
+void *producer(void *arg)
+{
+    int item;
+    for(int i = 1; i <= 5; i++)
+    {
+        item = i;
+        
+        /* Check for empty space */
+        sem_wait(&empty);
+        
+        /* Enter critical section */
+        sem_wait(&mutex);
+
+        buffer[in] = item;
+
+        printf("Produced : %d at %d\n", item, in);
+
+        in = (in + 1) % SIZE;
+
+        /* Exit critical section */
+        sem_post(&mutex);
+
+        /* Increase full count */
+        sem_post(&full);
     }
+
     return NULL;
 }
 
-void *consumer(void *args){
-    int i = 0 ;
-    int item = 0 ;
-    for(i=0;i<10;i++){
-        pthread_mutex_lock(&mutex);
-        while(count==0){
-            pthread_cond_wait(&not_empty, &mutex);
-        }
+/* Consumer Function */
+void *consumer(void *arg)
+{
+    int item;
+
+    for(int i = 1; i <= 5; i++)
+    {
+        /* Check for filled slots */
+        sem_wait(&full);
+
+        /* Enter critical section */
+        sem_wait(&mutex);
+
         item = buffer[out];
-        printf("consumed %d from %d\n", item , out);
-        out = (out + 1 ) % MAX_SIZE;
-        count--;
 
-        pthread_cond_signal(&not_full);
-        pthread_mutex_unlock(&mutex);
-        usleep(700000);
+        printf("Consumed : %d from %d\n", item, out);
 
+        out = (out + 1) % SIZE;
+
+        /* Exit critical section */
+        sem_post(&mutex);
+
+        /* Increase empty count */
+        sem_post(&empty);
     }
-    return NULL ;
+
+    return NULL;
 }
 
-int main(){
-    pthread_t consumer_thread, producer_thread;
-    pthread_mutex_init(&mutex,NULL);
-    pthread_cond_init(&not_full, NULL);
-    pthread_cond_init(&not_empty,NULL);
+int main()
+{
+    pthread_t p1, c1;
 
-    pthread_create(&consumer_thread,NULL , consumer, NULL);
-    pthread_create(&producer_thread,NULL , producer, NULL);
+    /* Initialize Semaphores */
+    sem_init(&mutex, 0, 1);
+    sem_init(&empty, 0, SIZE);
+    sem_init(&full, 0, 0);
 
-    pthread_join(producer_thread,NULL);
-    pthread_join(consumer_thread,NULL);
+    /* Create Threads */
+    pthread_create(&p1, NULL, producer, NULL);
+    pthread_create(&c1, NULL, consumer, NULL);
 
-    pthread_mutex_destroy(&mutex);
-    pthread_cond_destroy(&not_empty);
-    pthread_cond_destroy(&not_full);
+    /* Wait for Threads */
+    pthread_join(p1, NULL);
+    pthread_join(c1, NULL);
+
+    /* Destroy Semaphores */
+    sem_destroy(&mutex);
+    sem_destroy(&empty);
+    sem_destroy(&full);
 
     return 0;
 }
