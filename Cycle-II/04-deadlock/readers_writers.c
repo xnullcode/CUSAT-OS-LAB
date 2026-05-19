@@ -1,53 +1,94 @@
-#include<stdio.h>
-#include<pthread.h>
-#include<unistd.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
 
-// function for writing 
+/* Shared variables */
+int data = 1;
+int read_count = 0;
 
-#define MAX_SIZE 5
-int  buffer[MAX_SIZE], curr=0 , value =0;
-pthread_mutex_t mutex;
+/* Semaphores */
+sem_t mutex; // Controls access to read_count
+sem_t wrt;   // Controls access to the shared data
 
-void *writers(void *args){
-    int i;
-    for(i=0;i< MAX_SIZE;i++){
-        pthread_mutex_lock(&mutex);
-        
-        buffer[curr]= value;
-        printf("Writers entered %d at index %d \n",value,curr+1);
-        value++;
-        curr++;
-        pthread_mutex_unlock(&mutex);
-        usleep(600000);
-    }
+/* Writer Function */
+void *writer(void *arg)
+{
+    int w_id = *((int *)arg);
+
+    /* Wait for exclusive access to shared data */
+    sem_wait(&wrt);
+
+    /* Critical Section: Writing */
+    data = data * 2;
+    printf("Writer %d modified data to %d\n", w_id, data);
+
+    /* Release exclusive access */
+    sem_post(&wrt);
+
     return NULL;
 }
 
-void *reader(void *args){
-    int i;
-    usleep(500000);
-    for(i=0;i<MAX_SIZE;i++){
-        pthread_mutex_lock(&mutex);
-        if(curr>0){
-            curr--;
-            printf("Reader read %d from index %d \n", buffer[curr], curr + 1);
-        }
-        pthread_mutex_unlock(&mutex);
+/* Reader Function */
+void *reader(void *arg)
+{
+    int r_id = *((int *)arg);
+
+    /* Entry section: Safely update read_count */
+    sem_wait(&mutex);
+    read_count++;
+    if (read_count == 1)
+    {
+        /* First reader locks the resource from writers */
+        sem_wait(&wrt);
     }
-    return NULL ;
+    sem_post(&mutex);
+
+    /* Critical Section: Reading (multiple readers can be here) */
+    printf("Reader %d reads data as %d\n", r_id, data);
+
+    /* Exit section: Safely update read_count */
+    sem_wait(&mutex);
+    read_count--;
+    if (read_count == 0)
+    {
+        /* Last reader releases the resource for writers */
+        sem_post(&wrt);
+    }
+    sem_post(&mutex);
+
+    return NULL;
 }
-int main(){
-    pthread_t writer_thread,reader_thread;
 
-    pthread_mutex_init(&mutex , NULL );
-    pthread_create(&writer_thread, NULL , writers , NULL);
-    pthread_create(&reader_thread, NULL , reader, NULL );
+int main()
+{
+    pthread_t r[5], w[5];
+    int ids[5] = {1, 2, 3, 4, 5};
 
-    pthread_join(writer_thread, NULL);
-    pthread_join(reader_thread, NULL);
+    /* Initialize Semaphores */
+    sem_init(&mutex, 0, 1);
+    sem_init(&wrt, 0, 1);
 
-    pthread_mutex_destroy(&mutex);
+    /* Create Threads */
+    for (int i = 0; i < 3; i++) {
+        pthread_create(&w[i], NULL, writer, &ids[i]);
+        pthread_create(&r[i], NULL, reader, &ids[i]);
+    }
+    for (int i = 3; i < 5; i++) {
+        pthread_create(&r[i], NULL, reader, &ids[i]);
+    }
+
+    /* Wait for Threads to complete */
+    for (int i = 0; i < 3; i++) {
+        pthread_join(w[i], NULL);
+    }
+    for (int i = 0; i < 5; i++) {
+        pthread_join(r[i], NULL);
+    }
+
+    /* Destroy Semaphores */
+    sem_destroy(&mutex);
+    sem_destroy(&wrt);
 
     return 0;
 }
-// lock , write , unlock
