@@ -59,12 +59,25 @@ int main() {
         if (rbt[p] > 0) enqueue(p);
 
         // if queue empty, jump to next arrival
-        if (size == 0) {
+      /*  if (size == 0) {
             for (int i = 0; i < n; i++)
                 if (!done[i] && rbt[i] > 0) {
                     current_time = at[i];
                     enqueue(i); enqueued[i] = 1;
                     break;
+                }
+        } */
+        if (size == 0) {
+                int next = -1;
+                for (int i = 0; i < n; i++)
+                    if (!done[i] && (next == -1 || at[i] < at[next]))
+                        next = i;
+                if (next != -1) {
+                    current_time = at[next];
+                    for (int i = 0; i < n; i++)
+                        if (!done[i] && at[i] <= current_time && !enqueued[i]) {
+                            enqueue(i); enqueued[i] = 1;
+                        }
                 }
         }
     }
